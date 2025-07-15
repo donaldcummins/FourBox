@@ -71,21 +71,18 @@ def step_analytical(A, B, F, n):
     # Eigendecomposition: A = V D V_inv
     eigvals, V = np.linalg.eig(A)
     V_inv = np.linalg.inv(V)
+    # Precompute constant term
+    BF_transformed = V_inv @ (B * F) # (4, 1)
     # Time steps (n,)
     t = np.arange(1, n + 1)
     # Compute exp(D * t) for all t: shape (n, 4)
     exp_diag = np.exp(np.outer(t, eigvals))  # (n, 4)
-    # For each t, expA_t = V @ diag(exp_diag[t]) @ V_inv
-    # Perform diagonal matmul via broadcasting
-    scaled_V = V[None, :, :] * exp_diag[:, None, :] # (n, 4, 4)
-    expA_t = scaled_V @ V_inv # (n, 4, 4)
-    # delta = expA_t - I
-    delta = expA_t - np.eye(4)
-    # (n, 4, 4) @ (4, 1) -> (n, 4, 1)
-    delta_BF = delta @ (B * F)
-    # Solve A x = delta_BF for each t (vectorized)
-    # np.linalg.solve(A, ...) expects (..., 4), so squeeze last dim
-    x = np.linalg.solve(A, delta_BF.squeeze(-1).T).T  # (n, 4)
+    # Compute (exp - 1) / lambda
+    diag_terms = (exp_diag - 1) / eigvals # (n, 4)
+    # Scale V columns by diag_terms
+    scaled_V = V[None, :, :] * diag_terms[:, None, :] # (n, 4, 4)
+    # Multiply by BF in transformed space
+    x = (scaled_V @ BF_transformed).squeeze(-1) # (n, 4)
     return x
 
 def pack(C, κ, ϵ, F):
