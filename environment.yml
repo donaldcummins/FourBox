@@ -1,0 +1,16 @@
+name: four_box
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python
+  - numpy
+  - matplotlib
+  - scipy
+  - pandas
+  - jupyterlab
+  - xarray
+  - dask
+  - netCDF4
+  - bottleneck
+  - cftime
