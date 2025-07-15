@@ -69,11 +69,23 @@ def step_numerical(A, B, F, n):
         return sol.y.T
 
 def step_analytical(A, B, F, n):
-    t = np.arange(1, n + 1).reshape(-1, 1)  # shape (n, 1)
-    expm_At = np.array([expm(A * ti) for ti in t[:, 0]])  # shape (n, 4, 4)
-    delta = expm_At - np.eye(4)  # shape (n, 4, 4), broadcasts np.eye(4)
-    # (n, 4, 4) @ (4, 1) -> (n, 4, 1), squeeze to (n, 4)
-    x = np.linalg.solve(A, (delta @ (B * F)).squeeze(-1).T).T
+    # Eigendecomposition: A = V D V_inv
+    eigvals, V = np.linalg.eig(A)
+    V_inv = np.linalg.inv(V)
+    # Time steps (n,)
+    t = np.arange(1, n + 1)
+    # Compute exp(D * t) for all t: shape (n, 4)
+    exp_diag = np.exp(np.outer(t, eigvals))  # (n, 4)
+    # For each t, expA_t = V @ diag(exp_diag[t]) @ V_inv
+    # Stack all expA_t: (n, 4, 4)
+    expA_t = np.einsum('ij,nj,jk->nik', V, exp_diag, V_inv)
+    # delta = expA_t - I
+    delta = expA_t - np.eye(4)
+    # (n, 4, 4) @ (4, 1) -> (n, 4, 1)
+    delta_BF = np.matmul(delta, B * F)
+    # Solve A x = delta_BF for each t (vectorized)
+    # np.linalg.solve(A, ...) expects (..., 4), so squeeze last dim
+    x = np.linalg.solve(A, delta_BF.squeeze(-1).T).T  # (n, 4)
     return x
 
 def pack(C, κ, ϵ, F):
