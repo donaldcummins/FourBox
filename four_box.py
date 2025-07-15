@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.linalg import expm
 from scipy.integrate import solve_ivp
 from scipy.optimize import minimize
 
@@ -77,12 +76,13 @@ def step_analytical(A, B, F, n):
     # Compute exp(D * t) for all t: shape (n, 4)
     exp_diag = np.exp(np.outer(t, eigvals))  # (n, 4)
     # For each t, expA_t = V @ diag(exp_diag[t]) @ V_inv
-    # Stack all expA_t: (n, 4, 4)
-    expA_t = np.einsum('ij,nj,jk->nik', V, exp_diag, V_inv)
+    # Perform diagonal matmul via broadcasting
+    scaled_V = V[None, :, :] * exp_diag[:, None, :] # (n, 4, 4)
+    expA_t = scaled_V @ V_inv # (n, 4, 4)
     # delta = expA_t - I
     delta = expA_t - np.eye(4)
     # (n, 4, 4) @ (4, 1) -> (n, 4, 1)
-    delta_BF = np.matmul(delta, B * F)
+    delta_BF = delta @ (B * F)
     # Solve A x = delta_BF for each t (vectorized)
     # np.linalg.solve(A, ...) expects (..., 4), so squeeze last dim
     x = np.linalg.solve(A, delta_BF.squeeze(-1).T).T  # (n, 4)
