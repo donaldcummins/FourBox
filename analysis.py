@@ -13,7 +13,7 @@ ds.close()
 
 # Fit four-box EBM with light regularization on timescales
 y = np.column_stack((tas, rtmt))
-model, res = fit_model(y, alpha=1e-4)
+model, res = fit_model(y, alpha=0)
 
 # Plot the results
 plt.plot(y)
