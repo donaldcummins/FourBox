@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from scipy.optimize import minimize
 
@@ -57,15 +56,15 @@ def B_matrix(C):
     return B
 
 def step_numerical(A, B, F, n):
-        def ode_system(t, y):
-            gradient = A @ y.reshape(-1, 1) + B * F
-            return gradient.flatten()
+    def ode_system(t, y):
+        gradient = A @ y.reshape(-1, 1) + B * F
+        return gradient.flatten()
 
-        y0 = np.zeros(4)
-        t_span = (0, n)
-        t_eval = np.arange(1, n + 1)
-        sol = solve_ivp(ode_system, t_span, y0, 'RK45', t_eval)
-        return sol.y.T
+    y0 = np.zeros(4)
+    t_span = (0, n)
+    t_eval = np.arange(1, n + 1)
+    sol = solve_ivp(ode_system, t_span, y0, 'RK45', t_eval)
+    return sol.y.T
 
 def step_analytical(A, B, F, n):
     # Eigendecomposition: A = V D V_inv
@@ -76,7 +75,7 @@ def step_analytical(A, B, F, n):
     # Time steps (n,)
     t = np.arange(1, n + 1)
     # Compute exp(D * t) for all t: shape (n, 4)
-    exp_diag = np.exp(np.outer(t, eigvals))  # (n, 4)
+    exp_diag = np.exp(np.outer(t, eigvals)) # (n, 4)
     # Compute (exp - 1) / lambda
     diag_terms = (exp_diag - 1) / eigvals # (n, 4)
     # Scale V columns by diag_terms
